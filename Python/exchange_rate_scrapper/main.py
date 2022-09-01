@@ -15,8 +15,7 @@ if __name__ == "__main__":
     # TODO: ReWrite without two lists.
     #  Use dictionary, that use bank name as key
     #  and exchange rate as value
-    bank_names = list()
-    currency_rates = list(list())
+    banks_info = dict()
 
     for bank in banks:
         try:
@@ -29,24 +28,23 @@ if __name__ == "__main__":
                     bank_rate.append(float(-1.0))
                     continue
                 # Bank name
-                if bank_info.span.img is not None:
+                if bank_info.find('img'):
+                # if bank_info.span.img is not None:
                     name = str(bank_info.span.img).split('\"')[1]
-                    bank_names.append(name)
                 # Bank currency
                 else:
-                    curr = bank_info.text
                     bank_rate.append(float(bank_info.span.text))
 
-            # Add currency rate into rates list
-            currency_rates.append(bank_rate)
+            # TODO:
+            banks_info[name] = bank_rate
 
         except Exception as e:
             # Exceptions with NoneType objects (collect only bank names)
             continue
 
-    for name, rate in zip(bank_names, currency_rates):
-        print('{:<25}'.format(name), end='')
-        for currency in rate:
+    for bank in banks_info:
+        print('{:<25}'.format(bank), end='')
+        for currency in banks_info[bank]:
             if currency < 0:
                 print('{:<10}'.format('-'), end='')
                 continue
