@@ -1,10 +1,13 @@
 # Created by SiFi
 # Simple scrapper, that uses currency rate and output it in text format
 # Created without commercial purpose
-
+import re
 
 from bs4 import BeautifulSoup
 import requests
+
+
+# import re
 
 
 # Find max element in dictionary lists index
@@ -45,6 +48,8 @@ if __name__ == "__main__":
             # Collect all information about bank
             for bank_info in bank:
                 a = bank_info
+
+                # DO NOT! Rewrite to regEx (Extremely slow!!)
                 if str(bank_info) == '<td class="currencies-courses__currency-cell ' \
                                      'currencies-courses__currency-cell--empty">-</td>':
                     bank_rate.append(float(-1.0))
@@ -62,6 +67,8 @@ if __name__ == "__main__":
 
         except Exception as e:
             # Exceptions with NoneType objects (collect only bank names)
+            # count += 1
+            # print(count)
             continue
 
     # Print additional info
