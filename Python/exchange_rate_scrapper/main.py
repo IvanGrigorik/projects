@@ -1,13 +1,9 @@
 # Created by SiFi
 # Simple scrapper, that uses currency rate and output it in text format
 # Created without commercial purpose
-import re
 
-from bs4 import BeautifulSoup
 import requests
-
-
-# import re
+from bs4 import BeautifulSoup
 
 
 # Find max element in dictionary lists index
@@ -67,18 +63,17 @@ if __name__ == "__main__":
 
         except Exception as e:
             # Exceptions with NoneType objects (collect only bank names)
-            # count += 1
-            # print(count)
             continue
 
     # Print additional info
     currencies = ['USD', 'EUR', 'RUB (100)', 'EUR/USD']
-    print('{:<25}'.format('Bank'), end='')
+    print('{:<3} {:<25}'.format('№', 'Bank'), end='')
 
     for currency in currencies:
         print(f'{currency}'.center(20), end='')
     print()
-    print('{:<25}'.format(''), end='')
+
+    print('{:<29}'.format(''), end='')
     buy_sell = ['Buy', 'Sell']
     for currency in currencies:
         for trade in buy_sell:
@@ -86,8 +81,8 @@ if __name__ == "__main__":
     print()
 
     # Print currencies rate
-    for bank in banks_info:
-        print('{:<25}'.format(bank), end='')
+    for (number, bank) in enumerate(banks_info):
+        print('{:<3} {:<25}'.format(str(number + 1) + '.', bank), end='')
         for currency in banks_info[bank]:
             if currency < 0:
                 print('{:<10}'.format('-'), end='')
