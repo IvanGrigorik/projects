@@ -5,30 +5,6 @@
 import requests
 from bs4 import BeautifulSoup
 
-
-# Find max element in dictionary lists index
-# Example:
-# example_dict = ('a': [1, 2, 3, 4],
-#                 'b': [2, 3, 4, 5],
-#                 'c': [3, 4, 5, 6])
-# find_max(example_dict, 0) == 3
-# find_max(example_dict, 3) == 6 and so on
-def find_max(info: dict, index: int):
-    max_value = 0
-    for element in info:
-        if info[element][index] > max_value:
-            max_value = info[element][index]
-    return max_value
-
-
-def find_min(info: dict, index: int):
-    max_value = 0
-    for element in info:
-        if info[element][index] < max_value:
-            max_value = info[element][index]
-    return max_value
-
-
 if __name__ == "__main__":
     source = requests.get('https://myfin.by/currency/minsk').text
     soup = BeautifulSoup(source, 'lxml')
@@ -36,56 +12,49 @@ if __name__ == "__main__":
 
     banks = table.find_all('tr')
     banks_info = dict()
+    USD_list = list()
+    EUR_list = list()
+    RUB100_list = list()
+    EUR_USD_list = list()
+    currencies = [USD_list, EUR_list, RUB100_list, EUR_USD_list]
 
     for bank in banks:
         try:
             bank_rate = list()
             name = ''
+
             # Collect all information about bank
             for bank_info in bank:
-                a = bank_info
-
-                # DO NOT! Rewrite to regEx (Extremely slow!!)
+                # ! DO NOT Rewrite to regEx (Extremely slow!!)
+                # If bank doesn't sell currencies
                 if str(bank_info) == '<td class="currencies-courses__currency-cell ' \
                                      'currencies-courses__currency-cell--empty">-</td>':
-                    bank_rate.append(float(-1.0))
-                    continue
+                    bank_rate.append(None)
+
                 # Bank name
-                if bank_info.find('img'):
+                elif bank_info.find('img'):
                     # if bank_info.span.img is not None:
                     name = str(bank_info.span.img).split('\"')[1]
+
                 # Bank currency
                 else:
                     bank_rate.append(float(bank_info.span.text))
 
-            # TODO:
             banks_info[name] = bank_rate
 
         except Exception as e:
-            # Exceptions with NoneType objects (collect only bank names)
+            # Exceptions with NoneType objects (collect only bank currencies)
             continue
 
-    # Print additional info
-    currencies = ['USD', 'EUR', 'RUB (100)', 'EUR/USD']
-    print('{:<3} {:<25}'.format('№', 'Bank'), end='')
+    bank_names = list()
+    for bank_name in banks_info.keys():
+        bank_names.append(bank_name)
 
-    for currency in currencies:
-        print(f'{currency}'.center(20), end='')
-    print()
+    # Parse data
+    number_dict = {'USD': 0, 'EUR': 2, 'RUB_100': 4, 'EUR_USD': 5}
+    for x, currency in enumerate(number_dict.values()):
+        for bank in banks_info:
+            currencies[x].append((banks_info[bank][currency], banks_info[bank][currency + 1]))
 
-    print('{:<29}'.format(''), end='')
-    buy_sell = ['Buy', 'Sell']
-    for currency in currencies:
-        for trade in buy_sell:
-            print('{:<10}'.format(trade), end='')
-    print()
-
-    # Print currencies rate
-    for (number, bank) in enumerate(banks_info):
-        print('{:<3} {:<25}'.format(str(number + 1) + '.', bank), end='')
-        for currency in banks_info[bank]:
-            if currency < 0:
-                print('{:<10}'.format('-'), end='')
-                continue
-            print('{:<10}'.format(currency), end='')
-        print()
+    for x in range(len(bank_names)):
+        print(bank_names[x], USD_list[x], EUR_list[x], RUB100_list[x], EUR_USD_list[x])
