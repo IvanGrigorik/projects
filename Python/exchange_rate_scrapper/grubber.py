@@ -32,6 +32,8 @@ def grub_currencies_rate() -> (list, list, list, list, list):
     currencies = [USD_list, EUR_list, RUB100_list, EUR_USD_list]
 
     for bank in banks:
+        if len(banks_info.keys()) >= 20:
+            break
         try:
             bank_rate = list()
             name = ''
@@ -48,12 +50,15 @@ def grub_currencies_rate() -> (list, list, list, list, list):
                 elif bank_info.find('img'):
                     # if bank_info.span.img is not None:
                     name = str(bank_info.span.img).split('\"')[1]
+                    if name == "«Заначка»" or name == "Онлайн-обменник Nembo":
+                        break
 
                 # Bank currency
                 else:
                     bank_rate.append(float(bank_info.span.text))
 
-            banks_info[name] = bank_rate
+            if name != "«Заначка»" and name != "Онлайн-обменник Nembo":
+                banks_info[name] = bank_rate
 
         except Exception as e:
             # Exceptions with NoneType objects (collect only bank currencies)
