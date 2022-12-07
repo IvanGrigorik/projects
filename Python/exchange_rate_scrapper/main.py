@@ -5,13 +5,14 @@ import tkinter
 
 import customtkinter
 from grubber import *
+from functools import partial
 
 customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
 
 
-def sort_currencies():
-    print("Hello, ")
+def sort_currencies(sort_value: str):
+    print(f"Hello, {sort_value}")
     pass
 
 
@@ -77,7 +78,7 @@ class App(customtkinter.CTk):
         self.update()  # To get __bank_names width
         self.__bank_button = customtkinter.CTkButton(master=self.__bank_names, text="Bank names",
                                                      width=self.__bank_names.winfo_width() - 20,
-                                                     corner_radius=4, command=self.sort_banks)
+                                                     corner_radius=4, command=partial(sort_currencies, "banks"))
         self.__bank_button.grid(row=0, column=0, padx=10, pady=10)
 
         # Top bar (with currencies with the following names: USD, EUR, RUB100, EUR_USD)
@@ -97,9 +98,6 @@ class App(customtkinter.CTk):
 
         self.update()
 
-        pass
-
-    def sort_banks(self):
         pass
 
 
