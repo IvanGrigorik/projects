@@ -1,5 +1,32 @@
+from dataclasses import dataclass, fields
+
 import requests
 from bs4 import BeautifulSoup
+
+
+@dataclass
+class Currency:
+    buy: float
+    sell: float
+
+    def __init__(self, currency: tuple):
+        self.buy = currency[0]
+        self.sell = currency[1]
+
+
+@dataclass
+class BankInfo:
+    name: str
+    USD: Currency
+    EUR: Currency
+    RUB100: Currency
+    EUR_USD: Currency
+
+
+# info = [BankInfo("zxc", Currency(1, 1), Currency(2, 2), Currency(3, 3))]
+#
+# info.sort(key=lambda x, y: x.USD.buy < y.USD.buy)
+DUPLICATED_BANKS = ["«Заначка»", "Онлайн-обменник Nembo", "Up «Суперкурс»", "InSync by Alfa-Bank", "Paritetbank"]
 
 
 def grub_exchange_rate() -> dict:
@@ -13,11 +40,12 @@ def grub_exchange_rate() -> dict:
         line = exchange_rate_table[i]
         rate_from_BY[line.next.next_sibling.next_sibling.text] \
             = float(line.next.next_sibling.text) / float(
-            line.next.next_sibling.next_sibling.next_sibling.next_sibling.next)
+            line.next.next_sibling.next_sibling.next_sibling.next)
+        # can be line.next.next_sibling.next_sibling.next_sibling.next_sibling.next
     return rate_from_BY
 
 
-def grub_currencies_rate() -> (list, list, list, list, list):
+def grub_currencies_rate() -> (list):
     """Return tuple of lists, which contain next strings: bank names, USD rate, EUR rate, RUB100 rate, EUR_USD rate"""
     source = requests.get('https://myfin.by/currency/minsk').text
     soup = BeautifulSoup(source, 'lxml')
@@ -50,14 +78,14 @@ def grub_currencies_rate() -> (list, list, list, list, list):
                 elif bank_info.find('img'):
                     # if bank_info.span.img is not None:
                     name = str(bank_info.span.img).split('\"')[1]
-                    if name == "«Заначка»" or name == "Онлайн-обменник Nembo":
+                    if name in DUPLICATED_BANKS:
                         break
 
                 # Bank currency
                 else:
                     bank_rate.append(float(bank_info.span.text))
 
-            if name != "«Заначка»" and name != "Онлайн-обменник Nembo":
+            if name not in DUPLICATED_BANKS:
                 banks_info[name] = bank_rate
 
         except Exception as e:
@@ -74,4 +102,10 @@ def grub_currencies_rate() -> (list, list, list, list, list):
         for bank in banks_info:
             currencies[x].append((banks_info[bank][currency], banks_info[bank][currency + 1]))
 
-    return bank_names, USD_list, EUR_list, RUB100_list, EUR_USD_list
+    # return bank_names, USD_list, EUR_list, RUB100_list, EUR_USD_list
+
+    banks_info = list()
+    for (name, USD, EUR, RUB100, EUR_USD) in zip(bank_names, USD_list, EUR_list, RUB100_list, EUR_USD_list):
+        banks_info.append(BankInfo(name, Currency(USD), Currency(EUR), Currency(RUB100), Currency(EUR_USD)))
+
+    return banks_info
