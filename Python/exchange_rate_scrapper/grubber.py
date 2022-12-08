@@ -40,7 +40,7 @@ def grub_exchange_rate() -> dict:
         line = exchange_rate_table[i]
         rate_from_BY[line.next.next_sibling.next_sibling.text] \
             = float(line.next.next_sibling.text) / float(
-            line.next.next_sibling.next_sibling.next_sibling.next)
+            line.next.next_sibling.next_sibling.next_sibling.next_sibling.next)
         # can be line.next.next_sibling.next_sibling.next_sibling.next_sibling.next
     return rate_from_BY
 
@@ -57,7 +57,6 @@ def grub_currencies_rate() -> (list):
     EUR_list = list()
     RUB100_list = list()
     EUR_USD_list = list()
-    currencies = [USD_list, EUR_list, RUB100_list, EUR_USD_list]
 
     for bank in banks:
         if len(banks_info.keys()) >= 20:
@@ -97,7 +96,8 @@ def grub_currencies_rate() -> (list):
         bank_names.append(bank_name)
 
     # Parse data
-    number_dict = {'USD': 0, 'EUR': 2, 'RUB_100': 4, 'EUR_USD': 5}
+    currencies = [USD_list, EUR_list, RUB100_list, EUR_USD_list]
+    number_dict = {'USD': 0, 'EUR': 2, 'RUB_100': 4, 'EUR_USD': 6}
     for x, currency in enumerate(number_dict.values()):
         for bank in banks_info:
             currencies[x].append((banks_info[bank][currency], banks_info[bank][currency + 1]))

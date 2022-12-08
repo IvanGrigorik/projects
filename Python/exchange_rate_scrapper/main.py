@@ -86,13 +86,36 @@ class App(CTk):
         self.__waiting_text.pack(padx=0, pady=self.winfo_height() / 3)
         self.update()
 
+    def operation(self, curr, b_or_s):
+        # IDK how do it easier for current architecture
+        match curr:
+            case "USD":
+                self.__currencies.banks_info.sort(key=lambda x: x.USD.buy) if b_or_s == "buy" else \
+                    self.__currencies.banks_info.sort(key=lambda x: x.USD.sell, reverse=True)
+
+            case "EUR":
+                self.__currencies.banks_info.sort(key=lambda x: x.EUR.buy) if b_or_s == "buy" else \
+                    self.__currencies.banks_info.sort(key=lambda x: x.EUR.sell, reverse=True)
+
+            case "RUB100":
+                self.__currencies.banks_info.sort(key=lambda x: x.RUB100.buy) if b_or_s == "buy" else \
+                    self.__currencies.banks_info.sort(key=lambda x: x.RUB100.sell, reverse=True)
+
+            case "EUR_USD":
+                self.__currencies.banks_info.sort(key=lambda x: x.EUR_USD.buy) if b_or_s == "buy" else \
+                    self.__currencies.banks_info.sort(key=lambda x: x.EUR_USD.sell, reverse=True)
+
     def sort_currencies_callback(self, sort_value: str):
-        self.__currencies.banks_info.sort(key=lambda x, y: x.USD.buy < y.USD.buy)
-        # self.banks_info.sort(key=lambda x: x.name)  # Sorted by bank name
-        # self.draw_bank_names()
-        # self.draw_currencies_rate()
-        print(f"Hello, {sort_value}")
+        # self.__currencies.banks_info.sort(key=lambda x: x.USD.buy)
+        if sort_value == "banks":
+            self.__currencies.banks_info.sort(key=lambda x: x.name)  # Sorted by bank name
+        else:
+            b_or_s, curr = sort_value.split(" ")
+            self.operation(curr, b_or_s)
+        self.add_banks_text()
+        self.add_rate_text()
         self.update()
+        print(f"Hello, {sort_value}")
         pass
 
     def draw_top_bar(self):
@@ -125,9 +148,9 @@ class App(CTk):
                       command=partial(self.sort_currencies_callback, f"{b_or_s} {curr}")))
 
         for currency in self.__currencies.currencies_names:
-            new_buy_sell_button("Buy", currency)
+            new_buy_sell_button("buy", currency)
             self.__buy_sell_buttons[-1].grid(row=1, column=column_num, pady=10)
-            new_buy_sell_button("Sell", currency)
+            new_buy_sell_button("sell", currency)
             self.__buy_sell_buttons[-1].grid(row=1, column=column_num + 1, pady=10)
             column_num += 2
 
@@ -154,6 +177,11 @@ class App(CTk):
 
         self.update()
 
+    def add_banks_text(self):
+        for i, bank in enumerate(self.__currencies.banks_info):
+            self.__bank_names_text[i].delete(f"0.0", "end")
+            self.__bank_names_text[i].insert(f"0.0", bank.name)
+
     def draw_bank_names(self):
         # Draw only bank names (as a text)
         self.__banks_info_frame = CTkFrame(master=self,
@@ -172,21 +200,35 @@ class App(CTk):
             self.__bank_names_text.append(CTkTextbox(master=self.__banks_info_frame,
                                                      height=5, width=self.__bank_button.winfo_width(),
                                                      activate_scrollbars=False))
-            self.__bank_names_text[-1].insert(f"0.0", bank.name)
-            self.__bank_names_text[-1].configure(state="disable")
+            # self.__bank_names_text[-1].configure(state="disable")
             self.__bank_names_text[-1].grid(row=pos + 1, column=0, padx=20, pady=5)
 
+        self.add_banks_text()
         self.update()
 
-    def add_rate_text(self, rate, t_row, t_column):
-        if rate is None:
-            rate = '-'
+    def add_rate_text(self):
+        rate_num = 0
+        for i, bank in enumerate(self.__currencies.banks_info):
+            for field in fields(bank):
+                if field.name != "name":
+                    rate_buy = getattr(getattr(bank, field.name), "buy")
+                    rate_sell = getattr(getattr(bank, field.name), "sell")
+                    if not rate_buy or not rate_buy:
+                        rate_sell = '-'
+                        rate_buy = '-'
+                    self.__curr_rate_text[rate_num].delete("0.0", "end")
+                    self.__curr_rate_text[rate_num + 1].delete("0.0", "end")
+                    self.__curr_rate_text[rate_num].insert(f"0.0", rate_buy)
+                    self.__curr_rate_text[rate_num + 1].insert(f"0.0", rate_sell)
+                    rate_num += 2
+                    self.update()
+
+    def define_rates_positions(self, t_row, t_column):
         self.__curr_rate_text.append(CTkTextbox(master=self.__banks_info_frame,
                                                 height=5,
                                                 width=self.__buy_sell_buttons[-1].winfo_width(),
                                                 activate_scrollbars=False))
-        self.__curr_rate_text[-1].insert(f"0.0", rate)
-        self.__curr_rate_text[-1].configure(state="disable")
+        # self.__curr_rate_text[-1].configure(state="disable")
         self.__curr_rate_text[-1].grid(row=t_row, column=t_column, padx=10, pady=5)
 
     def draw_currencies_rate(self):
@@ -196,9 +238,10 @@ class App(CTk):
             column = 3
             for field in fields(bank):
                 if field.name != "name":
-                    self.add_rate_text(getattr(getattr(bank, field.name), "buy"), row + 1, column)
-                    self.add_rate_text(getattr(getattr(bank, field.name), "sell"), row + 1, column + 1)
+                    self.define_rates_positions(row + 1, column)
+                    self.define_rates_positions(row + 1, column + 1)
                     column += 2
+        self.add_rate_text()
         pass
 
 
