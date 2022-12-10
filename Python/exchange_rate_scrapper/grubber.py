@@ -38,10 +38,12 @@ def grub_exchange_rate() -> dict:
 
     for i in range(3):
         line = exchange_rate_table[i]
-        rate_from_BY[line.next.next_sibling.next_sibling.text] \
+
+        # Can be line.next.next_sibling.text
+        rate_from_BY[line.next.next_sibling.next_sibling.next_sibling.text] \
             = float(line.next.next_sibling.text) / float(
             line.next.next_sibling.next_sibling.next_sibling.next_sibling.next)
-        # can be line.next.next_sibling.next_sibling.next_sibling.next_sibling.next
+        # can be line.next.next_sibling.next_sibling.next_sibling.next
     return rate_from_BY
 
 

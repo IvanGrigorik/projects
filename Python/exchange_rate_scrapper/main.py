@@ -1,6 +1,8 @@
 # Created by SiFi
 # Simple scrapper, that uses currency rate and output it in text format
 # Created without commercial purpose
+import customtkinter
+
 from grubber import *
 
 from customtkinter import *
@@ -16,7 +18,6 @@ class CurrencyParser:
     currencies_names = ["USD", "EUR", "RUB100", "EUR_USD"]
 
     def __init__(self):
-        # TODO: uncomment
         self.__exchange_rate_table = grub_exchange_rate()
         self.banks_info = grub_currencies_rate()
         self.banks_info.sort(key=lambda x: x.name)  # Sorted by bank name
@@ -32,12 +33,12 @@ class CurrencyParser:
     def convert_currency(self, source_currency: str, destination_currency: str, amount: float) -> float:
         """In: USD/EUR/RUB/BYN: str, USD/EUR/RUB/BYN: str, sum_to_convert: float"""
         # TODO: uncomment
-        # if source_currency in self.__exchange_rate_table.keys() and \
-        #         destination_currency in self.__exchange_rate_table.keys():
-        #     return amount * self.__exchange_rate_table[source_currency] / \
-        #         self.__exchange_rate_table[destination_currency]
-        # else:
-        #     raise Exception("Mismatch currency")
+        if source_currency in self.__exchange_rate_table.keys() and \
+                destination_currency in self.__exchange_rate_table.keys():
+            return round(amount * self.__exchange_rate_table[source_currency] / \
+                self.__exchange_rate_table[destination_currency], 2)
+        else:
+            raise Exception("Mismatch currency")
 
 
 class App(CTk):
@@ -51,24 +52,34 @@ class App(CTk):
 
         self.__waiting_text = CTkTextbox(self)
         self.waiting_text()
+        self.update()
         # Wait till request end
         self.__currencies = CurrencyParser()
         self.__waiting_text.destroy()
 
         self.update()
 
+        # Main "frame"
+        self.__tabview = None
 
-        # Main tab with currencies rates
+        # Tab with currencies rates
         self.__currencies_top_bar_buttons = None
-        self.__currencies_names_frame = CTkFrame(self)
+        self.__currencies_names_frame = None
         self.__buy_sell_buttons = None
-
-        self.__banks_button_frame = CTkFrame(self)
-        self.__bank_button = CTkButton(self)
+        self.__banks_button_frame = None
+        self.__bank_button = None
         self.__banks_info_frame = None
         self.__curr_rate_text = None
         self.__bank_names_text = None
-        self.__tabview = None
+
+        # Tab with converter
+        self.__converter_frame = None
+        self.__converter_entry = None
+        self.__converter_label = None
+        self.__combo_box_from_convert = None
+        self.__combo_box_to_convert = None
+        self.__reverse_button = None
+
         self.draw_tabs()
 
         self.update()
@@ -77,18 +88,20 @@ class App(CTk):
 
     def draw_tabs(self):
         self.draw_tabview()
-        self.draw_curr_rates()
+        self.draw_curr_rates_tab()
+        self.draw_converter_tab()
 
     def draw_tabview(self):
-        self.__tabview = CTkTabview(self, width=1000)
+        self.__tabview = CTkTabview(self, width=1400, height=970)
+        self.__tabview.grid_propagate(False)  # Set static-size tabview
         self.__tabview.add("Currencies")
         self.__tabview.add("Converter")
         self.__tabview.add("Charts")
-        self.__tabview.set("Currencies")
+        self.__tabview.set("Converter")
         self.__tabview.pack(padx=0, pady=0)
         pass
 
-    def draw_curr_rates(self):
+    def draw_curr_rates_tab(self):
         # Top bar variables (USD/EUR/RUB100/EUR_RUB, buy/sell buttons)
         self.draw_top_bar()
 
@@ -99,6 +112,88 @@ class App(CTk):
         self.define_bank_names_position()
         self.draw_currencies_rate()
 
+    def draw_converter_tab(self):
+        self.draw_converter_frame()
+        self.draw_entry()
+        self.draw_combo_boxes()
+        self.draw_reverse_button()
+        self.draw_label()
+
+    def draw_converter_frame(self):
+        self.__converter_frame = CTkFrame(master=self.__tabview.tab("Converter"),
+                                          height=400, width=800,
+                                          corner_radius=8)
+        self.__converter_frame.grid_propagate(False)  # Set static-size frame
+
+        self.__converter_frame.place(relx=.5, rely=.5, anchor=customtkinter.CENTER)
+
+    def draw_entry(self):
+        self.__converter_entry = CTkEntry(master=self.__converter_frame,
+                                          width=200, height=50,
+                                          corner_radius=6, border_width=1,
+                                          placeholder_text="Enter value")
+        self.__converter_entry.grid(row=0, column=0, padx=10, pady=40)
+        self.__converter_entry.bind("<KeyRelease>", command=self.entry_callback)
+
+    def entry_callback(self, event):
+        if self.is_number(self.__converter_entry.get()):
+            source_curr = self.__combo_box_from_convert.get()
+            dest_curr = self.__combo_box_to_convert.get()
+            converted_curr = self.__currencies.convert_currency(source_curr, dest_curr,
+                                                                float(self.__converter_entry.get()))
+            self.__converter_label.configure(text=converted_curr)
+        else:
+            self.__converter_label.configure(text="Enter valid value!")
+        pass
+
+    @staticmethod
+    def is_number(str_val: str):
+        try:
+            float(str_val)
+            return True
+        except ValueError:
+            return False
+
+    def draw_combo_boxes(self):
+        currencies = ["USD", "EUR", "RUB", "BYN"]
+        self.__combo_box_from_convert = CTkComboBox(master=self.__converter_frame,
+                                                    height=50, width=200,
+                                                    corner_radius=6, border_width=1,
+                                                    values=currencies, command=self.entry_callback)
+        self.__combo_box_from_convert.set("USD")
+        self.__combo_box_from_convert.grid(row=0, column=1, padx=10)
+
+        self.__combo_box_to_convert = CTkComboBox(master=self.__converter_frame,
+                                                  height=50, width=200,
+                                                  corner_radius=6, border_width=1,
+                                                  values=currencies, command=self.entry_callback)
+        self.__combo_box_to_convert.set("BYN")
+        self.__combo_box_to_convert.grid(row=0, column=3, padx=10)
+
+        pass
+
+    def draw_reverse_button(self):
+        self.__reverse_button = CTkButton(self.__converter_frame, width=50, height=50,
+                                          text="↔", corner_radius=50,
+                                          command=self.reverse_button_callback)
+        self.__reverse_button.grid(row=0, column=2)
+
+        pass
+
+    def reverse_button_callback(self):
+        from_val = self.__combo_box_from_convert.get()
+        self.__combo_box_from_convert.set(self.__combo_box_to_convert.get())
+        self.__combo_box_to_convert.set(from_val)
+        self.entry_callback(None)
+
+    def draw_label(self):
+        self.__converter_label = CTkLabel(master=self.__converter_frame,
+                                          height=150, width=420,
+                                          text="0.00",
+                                          fg_color=("#1A1A1A", "#333333"), corner_radius=8)
+        self.__converter_label.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
+        self.__converter_label.grid_columnconfigure(0, weight=1)
+
     def waiting_text(self):
         self.__waiting_text = CTkTextbox(master=self,
                                          fg_color='#1A1A1A',
@@ -107,7 +202,6 @@ class App(CTk):
         self.__waiting_text.insert("1.0", "Waiting...", "centralize_text")
         self.__waiting_text.configure(state="disable")  # Only read
         self.__waiting_text.pack(padx=0, pady=self.winfo_height() / 3)
-        self.update()
 
     def operation(self, curr, b_or_s):
         # IDK how do it easier for current architecture
@@ -174,8 +268,6 @@ class App(CTk):
             self.__buy_sell_buttons[-1].grid(row=1, column=column_num + 1, pady=10)
             column_num += 2
 
-        # self.update()
-
     def draw_bank_button(self):
         self.__banks_button_frame = CTkFrame(master=self.__tabview.tab("Currencies"),
                                              corner_radius=8,
@@ -202,7 +294,7 @@ class App(CTk):
     def define_bank_names_position(self):
         # Draw only bank names (as a text)
         self.__banks_info_frame = CTkFrame(master=self.__tabview.tab("Currencies"), corner_radius=8,
-                                           height=840, width=1260)
+                                           height=800, width=1260)
         self.__banks_info_frame.grid_propagate(False)  # Set static-size frame
         self.__banks_info_frame.grid(row=1, column=0, columnspan=3, padx=15, pady=0, sticky=W)
 
