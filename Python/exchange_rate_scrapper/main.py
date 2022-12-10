@@ -1,11 +1,12 @@
 # Created by SiFi
 # Simple scrapper, that uses currency rate and output it in text format
 # Created without commercial purpose
-import tkinter
-from functools import partial
 from grubber import *
 
 from customtkinter import *
+import tkinter
+
+from functools import partial
 
 set_appearance_mode("dark")
 set_default_color_theme("dark-blue")
@@ -42,7 +43,7 @@ class CurrencyParser:
 class App(CTk):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.geometry("1440x990")
+        self.geometry("1440x980")
         # TODO: make resizable app
         self.resizable(False, False)
 
@@ -56,25 +57,47 @@ class App(CTk):
 
         self.update()
 
-        # Bank names left bar
 
-        # Top bar variables
+        # Main tab with currencies rates
         self.__currencies_top_bar_buttons = None
         self.__currencies_names_frame = CTkFrame(self)
         self.__buy_sell_buttons = None
-        self.draw_top_bar()
 
         self.__banks_button_frame = CTkFrame(self)
         self.__bank_button = CTkButton(self)
+        self.__banks_info_frame = None
+        self.__curr_rate_text = None
+        self.__bank_names_text = None
+        self.__tabview = None
+        self.draw_tabs()
+
+        self.update()
+
+        print("Ready to use!")
+
+    def draw_tabs(self):
+        self.draw_tabview()
+        self.draw_curr_rates()
+
+    def draw_tabview(self):
+        self.__tabview = CTkTabview(self, width=1000)
+        self.__tabview.add("Currencies")
+        self.__tabview.add("Converter")
+        self.__tabview.add("Charts")
+        self.__tabview.set("Currencies")
+        self.__tabview.pack(padx=0, pady=0)
+        pass
+
+    def draw_curr_rates(self):
+        # Top bar variables (USD/EUR/RUB100/EUR_RUB, buy/sell buttons)
+        self.draw_top_bar()
+
+        # Button which sorted by bank names
         self.draw_bank_button()
 
-        self.__banks_info_frame = None
-        self.__bank_names_text = None
-        self.draw_bank_names()
-
-        self.__curr_rate_text = None
+        # Main frame with bank names and currencies
+        self.define_bank_names_position()
         self.draw_currencies_rate()
-        print("Ready to use!")
 
     def waiting_text(self):
         self.__waiting_text = CTkTextbox(master=self,
@@ -106,24 +129,21 @@ class App(CTk):
                     self.__currencies.banks_info.sort(key=lambda x: x.EUR_USD.sell, reverse=True)
 
     def sort_currencies_callback(self, sort_value: str):
-        # self.__currencies.banks_info.sort(key=lambda x: x.USD.buy)
         if sort_value == "banks":
             self.__currencies.banks_info.sort(key=lambda x: x.name)  # Sorted by bank name
         else:
             b_or_s, curr = sort_value.split(" ")
             self.operation(curr, b_or_s)
-        self.add_banks_text()
-        self.add_rate_text()
-        self.update()
-        print(f"Hello, {sort_value}")
-        pass
+        self.set_banks_text()
+        self.set_rate_text()
 
     def draw_top_bar(self):
         # Draw top bar text (USD, EUR, RUB100, EUR_USD)
-        self.__currencies_names_frame = CTkFrame(master=self,
+        self.__currencies_names_frame = CTkFrame(master=self.__tabview.tab("Currencies"),
                                                  corner_radius=8,
-                                                 height=50, width=self.winfo_width() - 20)
-        self.__currencies_names_frame.grid(row=0, column=1, pady=10, sticky=N)
+                                                 height=50, width=1420)
+        # self.__currencies_names_frame
+        self.__currencies_names_frame.grid(row=0, column=1, pady=10, padx=0, sticky=N)
 
         self.__currencies_top_bar_buttons = list()
         column_num = 0
@@ -154,13 +174,13 @@ class App(CTk):
             self.__buy_sell_buttons[-1].grid(row=1, column=column_num + 1, pady=10)
             column_num += 2
 
-        self.update()
+        # self.update()
 
     def draw_bank_button(self):
-        self.__banks_button_frame = CTkFrame(master=self,
+        self.__banks_button_frame = CTkFrame(master=self.__tabview.tab("Currencies"),
                                              corner_radius=8,
                                              height=97,
-                                             width=int(self.winfo_width() / 4))
+                                             width=360)
         self.__banks_button_frame.grid_propagate(False)  # Set static-size frame
         self.__banks_button_frame.grid_columnconfigure(0, weight=1)  # Centralize all widgets inside
         self.__banks_button_frame.grid_rowconfigure(0, weight=1)  # Centralize all widgets inside
@@ -170,43 +190,33 @@ class App(CTk):
         self.update()  # To get __banks_button_frame width
 
         self.__bank_button = CTkButton(master=self.__banks_button_frame, text="Bank names",
-                                       width=self.__banks_button_frame.winfo_width() - 20,
+                                       width=340,
                                        height=50,
                                        corner_radius=4, command=partial(self.sort_currencies_callback, "banks"))
         self.__bank_button.grid()
 
-        self.update()
-
-    def add_banks_text(self):
+    def set_banks_text(self):
         for i, bank in enumerate(self.__currencies.banks_info):
-            self.__bank_names_text[i].delete(f"0.0", "end")
-            self.__bank_names_text[i].insert(f"0.0", bank.name)
+            self.__bank_names_text[i].configure(text=bank.name)
 
-    def draw_bank_names(self):
+    def define_bank_names_position(self):
         # Draw only bank names (as a text)
-        self.__banks_info_frame = CTkFrame(master=self,
-                                           corner_radius=8,
-                                           height=self.winfo_height() -
-                                                  self.__banks_button_frame.winfo_height() - 30,
-                                           width=self.__banks_button_frame.winfo_width() +
-                                                 self.__currencies_names_frame.winfo_width() + 20)
+        self.__banks_info_frame = CTkFrame(master=self.__tabview.tab("Currencies"), corner_radius=8,
+                                           height=840, width=1260)
         self.__banks_info_frame.grid_propagate(False)  # Set static-size frame
-
-        # self.__banks_info.grid_columnconfigure(0, weight=1)  # Centralize all widgets inside
         self.__banks_info_frame.grid(row=1, column=0, columnspan=3, padx=15, pady=0, sticky=W)
 
         self.__bank_names_text = list()
         for pos, bank in enumerate(self.__currencies.banks_info):
-            self.__bank_names_text.append(CTkTextbox(master=self.__banks_info_frame,
-                                                     height=5, width=self.__bank_button.winfo_width(),
-                                                     activate_scrollbars=False))
-            # self.__bank_names_text[-1].configure(state="disable")
+            self.__bank_names_text.append(CTkLabel(master=self.__banks_info_frame,
+                                                   height=30, width=340,
+                                                   fg_color=("#1A1A1A", "#333333"),
+                                                   corner_radius=4))
+            self.__bank_names_text[-1].grid_propagate(False)
             self.__bank_names_text[-1].grid(row=pos + 1, column=0, padx=20, pady=5)
+        self.set_banks_text()
 
-        self.add_banks_text()
-        self.update()
-
-    def add_rate_text(self):
+    def set_rate_text(self):
         rate_num = 0
         for i, bank in enumerate(self.__currencies.banks_info):
             for field in fields(bank):
@@ -216,19 +226,16 @@ class App(CTk):
                     if not rate_buy or not rate_buy:
                         rate_sell = '-'
                         rate_buy = '-'
-                    self.__curr_rate_text[rate_num].delete("0.0", "end")
-                    self.__curr_rate_text[rate_num + 1].delete("0.0", "end")
-                    self.__curr_rate_text[rate_num].insert(f"0.0", rate_buy)
-                    self.__curr_rate_text[rate_num + 1].insert(f"0.0", rate_sell)
+                    self.__curr_rate_text[rate_num].configure(text=rate_buy)
+                    self.__curr_rate_text[rate_num + 1].configure(text=rate_sell)
                     rate_num += 2
-                    self.update()
 
-    def define_rates_positions(self, t_row, t_column):
-        self.__curr_rate_text.append(CTkTextbox(master=self.__banks_info_frame,
-                                                height=5,
-                                                width=self.__buy_sell_buttons[-1].winfo_width(),
-                                                activate_scrollbars=False))
-        # self.__curr_rate_text[-1].configure(state="disable")
+    def define_rates_position(self, t_row, t_column):
+        self.__curr_rate_text.append(CTkLabel(master=self.__banks_info_frame,
+                                              height=30, width=90,
+                                              fg_color=("#1A1A1A", "#333333"),
+                                              corner_radius=4))
+        self.__curr_rate_text[-1].grid_propagate(False)
         self.__curr_rate_text[-1].grid(row=t_row, column=t_column, padx=10, pady=5)
 
     def draw_currencies_rate(self):
@@ -238,14 +245,11 @@ class App(CTk):
             column = 3
             for field in fields(bank):
                 if field.name != "name":
-                    self.define_rates_positions(row + 1, column)
-                    self.define_rates_positions(row + 1, column + 1)
+                    self.define_rates_position(row + 1, column)
+                    self.define_rates_position(row + 1, column + 1)
                     column += 2
-        self.add_rate_text()
+        self.set_rate_text()
         pass
-
-
-# def draw_bank_currencies(self):
 
 
 if __name__ == "__main__":

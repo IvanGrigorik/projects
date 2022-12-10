@@ -45,7 +45,7 @@ def grub_exchange_rate() -> dict:
     return rate_from_BY
 
 
-def grub_currencies_rate() -> (list):
+def grub_currencies_rate() -> list:
     """Return tuple of lists, which contain next strings: bank names, USD rate, EUR rate, RUB100 rate, EUR_USD rate"""
     source = requests.get('https://myfin.by/currency/minsk').text
     soup = BeautifulSoup(source, 'lxml')
