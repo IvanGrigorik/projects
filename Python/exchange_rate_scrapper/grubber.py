@@ -41,8 +41,8 @@ def grub_exchange_rate() -> dict:
 
         # Can be line.next.next_sibling.text
         rate_from_BY[line.next.next_sibling.next_sibling.next_sibling.text] \
-            = float(line.next.next_sibling.text) / float(
-            line.next.next_sibling.next_sibling.next_sibling.next_sibling.next)
+            = round(float(line.next.next_sibling.text) / float(
+            line.next.next_sibling.next_sibling.next_sibling.next_sibling.next), 4)
         # can be line.next.next_sibling.next_sibling.next_sibling.next
     return rate_from_BY
 

@@ -1,7 +1,6 @@
 # Created by SiFi
 # Simple scrapper, that uses currency rate and output it in text format
 # Created without commercial purpose
-import customtkinter
 
 from grubber import *
 
@@ -9,6 +8,10 @@ from customtkinter import *
 import tkinter
 
 from functools import partial
+import pandas
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import datetime
 
 set_appearance_mode("dark")
 set_default_color_theme("dark-blue")
@@ -20,8 +23,38 @@ class CurrencyParser:
     def __init__(self):
         self.__exchange_rate_table = grub_exchange_rate()
         self.banks_info = grub_currencies_rate()
-        self.banks_info.sort(key=lambda x: x.name)  # Sorted by bank name
-        pass
+        self.banks_info.sort(key=lambda sort_key: sort_key.name)  # Sorted by bank name
+        self.charts = {"USD": [0., 0, 0, 0, 0, 0, 0],
+                       "EUR": [0, 0, 0, 0, 0, 0, 0],
+                       "RUB100": [0, 0, 0, 0, 0, 0, 0],
+                       "day": []}
+        for x in range(6, -1, -1):
+            self.charts["day"].append((datetime.date.today() - datetime.timedelta(days=x)).strftime("%b %d"))
+
+        with open("currencies.txt", "r+") as currencies_file:
+            if currencies_file.readline().find(datetime.date.today().strftime("%b%d")) < 0:
+                content = datetime.date.today().strftime("%b%d") + ' ' + \
+                          "USD:" + str(self.__exchange_rate_table["USD"]) + ' ' + \
+                          "EUR:" + str(self.__exchange_rate_table["EUR"]) + ' ' + \
+                          "RUB100:" + str(self.__exchange_rate_table["RUB"]) + '\n'
+                for idx, line in enumerate(currencies_file):
+                    if idx != 6:
+                        content += line
+                print("ReWrite data")
+                currencies_file.truncate(0)
+                currencies_file.seek(0)
+                currencies_file.write(content)
+
+            currencies_file.seek(0)
+            for idx, line in enumerate(reversed(list(currencies_file))):
+                try:
+                    self.charts["USD"][idx] = float(line[line.find("USD") + 4:(line.find("EUR") - 1)])
+                    self.charts["EUR"][idx] = float(line[line.find("EUR") + 4:(line.find("RUB100") - 1)])
+                    self.charts["RUB100"][idx] = 100 * float(line[line.find("RUB100") + 7:])
+                except TypeError:
+                    exit(-1)
+
+            pass
 
     def refresh_rate(self):
         # TODO: uncomment
@@ -36,7 +69,7 @@ class CurrencyParser:
         if source_currency in self.__exchange_rate_table.keys() and \
                 destination_currency in self.__exchange_rate_table.keys():
             return round(amount * self.__exchange_rate_table[source_currency] / \
-                self.__exchange_rate_table[destination_currency], 2)
+                         self.__exchange_rate_table[destination_currency], 2)
         else:
             raise Exception("Mismatch currency")
 
@@ -62,7 +95,7 @@ class App(CTk):
         # Main "frame"
         self.__tabview = None
 
-        # Tab with currencies rates
+        # Currencies rates tab
         self.__currencies_top_bar_buttons = None
         self.__currencies_names_frame = None
         self.__buy_sell_buttons = None
@@ -72,13 +105,22 @@ class App(CTk):
         self.__curr_rate_text = None
         self.__bank_names_text = None
 
-        # Tab with converter
+        # Converter tab
         self.__converter_frame = None
         self.__converter_entry = None
         self.__converter_label = None
         self.__combo_box_from_convert = None
         self.__combo_box_to_convert = None
         self.__reverse_button = None
+
+        # Charts tab
+        self.__charts_frame = None
+        self.__combo_box_charts = None
+        self.__subplot = None
+        self.__back_figure = None
+        self.__line = None
+        self.__data_frame = None
+        self.__plot = None
 
         self.draw_tabs()
 
@@ -90,6 +132,7 @@ class App(CTk):
         self.draw_tabview()
         self.draw_curr_rates_tab()
         self.draw_converter_tab()
+        self.draw_charts_tab()
 
     def draw_tabview(self):
         self.__tabview = CTkTabview(self, width=1400, height=970)
@@ -97,9 +140,56 @@ class App(CTk):
         self.__tabview.add("Currencies")
         self.__tabview.add("Converter")
         self.__tabview.add("Charts")
-        self.__tabview.set("Converter")
+        self.__tabview.set("Charts")
         self.__tabview.pack(padx=0, pady=0)
         pass
+
+    def draw_charts_tab(self):
+        self.draw_charts_frame()
+        self.draw_combo_box_currency()
+        self.draw_chart()
+
+    def draw_charts_frame(self):
+        self.__charts_frame = CTkFrame(master=self.__tabview.tab("Charts"),
+                                       height=600, width=800,
+                                       corner_radius=8)
+        self.grid_propagate(False)
+        self.__charts_frame.place(relx=.5, rely=.5, anchor=CENTER)
+        self.update()
+        pass
+
+    def draw_combo_box_currency(self):
+        self.__combo_box_charts = CTkComboBox(master=self.__charts_frame,
+                                              height=50, width=200,
+                                              values=["USD", "EUR", "RUB100"],
+                                              corner_radius=6, border_width=1,
+                                              command=self.redraw_charts)
+        self.__combo_box_charts.grid(row=0, column=0, padx=10, pady=10)
+        self.update()
+
+    def redraw_charts(self, event):
+        plt.close(self.__back_figure)
+        self.draw_chart()
+
+    def draw_chart(self):
+        # Create and parse dataframe
+        currency = self.__combo_box_charts.get()
+        axis = {currency: self.__currencies.charts[currency],
+                "day": self.__currencies.charts["day"]}
+        self.__data_frame = pandas.DataFrame(axis)
+
+        self.__data_frame = self.__data_frame[["day", currency]].groupby("day").sum()
+        self.__back_figure = plt.Figure(figsize=(7, 5), dpi=100)
+        self.__back_figure.set_facecolor("#565B5E")
+        self.__subplot = self.__back_figure.add_subplot(111)
+        self.__line = FigureCanvasTkAgg(self.__back_figure, self.__charts_frame)
+        self.__line.get_tk_widget().grid(row=0, column=1, padx=10, pady=10)
+
+        self.__plot = self.__data_frame.plot(kind="line", legend=True, ax=self.__subplot,
+                                             color="#1F538D", marker='o',
+                                             fontsize=10)
+        self.__plot.set_facecolor("#D6D6D6")
+        self.__subplot.set_title("USD x BYN")
 
     def draw_curr_rates_tab(self):
         # Top bar variables (USD/EUR/RUB100/EUR_RUB, buy/sell buttons)
@@ -125,7 +215,7 @@ class App(CTk):
                                           corner_radius=8)
         self.__converter_frame.grid_propagate(False)  # Set static-size frame
 
-        self.__converter_frame.place(relx=.5, rely=.5, anchor=customtkinter.CENTER)
+        self.__converter_frame.place(relx=.5, rely=.5, anchor=CENTER)
 
     def draw_entry(self):
         self.__converter_entry = CTkEntry(master=self.__converter_frame,
