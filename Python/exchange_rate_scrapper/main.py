@@ -5,7 +5,6 @@
 from grubber import *
 
 from customtkinter import *
-import tkinter
 
 from functools import partial
 import pandas
