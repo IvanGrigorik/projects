@@ -20,7 +20,7 @@ class CurrencyParser:
     currencies_names = ["USD", "EUR", "RUB100", "EUR_USD"]
 
     def __init__(self):
-        self.__exchange_rate_table = grub_exchange_rate()
+        self.exchange_rate_table = grub_exchange_rate()
         self.banks_info = grub_currencies_rate()
         self.banks_info.sort(key=lambda sort_key: sort_key.name)  # Sorted by bank name
         self.charts = {"USD": [0., 0, 0, 0, 0, 0, 0],
@@ -33,9 +33,10 @@ class CurrencyParser:
         with open("currencies.txt", "r+") as currencies_file:
             if currencies_file.readline().find(datetime.date.today().strftime("%b%d")) < 0:
                 content = datetime.date.today().strftime("%b%d") + ' ' + \
-                          "USD:" + str(self.__exchange_rate_table["USD"]) + ' ' + \
-                          "EUR:" + str(self.__exchange_rate_table["EUR"]) + ' ' + \
-                          "RUB100:" + str(self.__exchange_rate_table["RUB"]) + '\n'
+                          "USD:" + str(self.exchange_rate_table["USD"]) + ' ' + \
+                          "EUR:" + str(self.exchange_rate_table["EUR"]) + ' ' + \
+                          "RUB100:" + str(self.exchange_rate_table["RUB"]) + '\n'
+                currencies_file.seek(0)
                 for idx, line in enumerate(currencies_file):
                     if idx != 6:
                         content += line
@@ -56,19 +57,17 @@ class CurrencyParser:
             pass
 
     def refresh_rate(self):
-        # TODO: uncomment
-        # self.__exchange_rate_table = grub_exchange_rate()
-        # self.bank_names, self.USD_list, \
-        #     self.EUR_list, self.RUB100_list, self.EUR_USD_list = grub_currencies_rate()
+        self.exchange_rate_table = grub_exchange_rate()
+        self.banks_info = grub_currencies_rate()
         pass
 
     def convert_currency(self, source_currency: str, destination_currency: str, amount: float) -> float:
         """In: USD/EUR/RUB/BYN: str, USD/EUR/RUB/BYN: str, sum_to_convert: float"""
         # TODO: uncomment
-        if source_currency in self.__exchange_rate_table.keys() and \
-                destination_currency in self.__exchange_rate_table.keys():
-            return round(amount * self.__exchange_rate_table[source_currency] / \
-                         self.__exchange_rate_table[destination_currency], 2)
+        if source_currency in self.exchange_rate_table.keys() and \
+                destination_currency in self.exchange_rate_table.keys():
+            return round(amount * self.exchange_rate_table[source_currency] / \
+                         self.exchange_rate_table[destination_currency], 2)
         else:
             raise Exception("Mismatch currency")
 
@@ -103,6 +102,8 @@ class App(CTk):
         self.__banks_info_frame = None
         self.__curr_rate_text = None
         self.__bank_names_text = None
+        self.__refresh_frame = None
+        self.__refresh_button = None
 
         # Converter tab
         self.__converter_frame = None
@@ -139,7 +140,7 @@ class App(CTk):
         self.__tabview.add("Currencies")
         self.__tabview.add("Converter")
         self.__tabview.add("Charts")
-        self.__tabview.set("Charts")
+        self.__tabview.set("Currencies")
         self.__tabview.pack(padx=0, pady=0)
         pass
 

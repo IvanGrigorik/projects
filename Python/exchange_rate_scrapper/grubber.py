@@ -23,9 +23,6 @@ class BankInfo:
     EUR_USD: Currency
 
 
-# info = [BankInfo("zxc", Currency(1, 1), Currency(2, 2), Currency(3, 3))]
-#
-# info.sort(key=lambda x, y: x.USD.buy < y.USD.buy)
 DUPLICATED_BANKS = ["«Заначка»", "Онлайн-обменник Nembo", "Up «Суперкурс»", "InSync by Alfa-Bank", "Paritetbank"]
 
 
@@ -39,11 +36,11 @@ def grub_exchange_rate() -> dict:
     for i in range(3):
         line = exchange_rate_table[i]
 
-        # Can be line.next.next_sibling.text
-        rate_from_BY[line.next.next_sibling.next_sibling.next_sibling.text] \
+        # Can be line.next.next_sibling.next_sibling.next_sibling.text
+        rate_from_BY[line.next.next_sibling.next_sibling.text] \
             = round(float(line.next.next_sibling.text) / float(
-            line.next.next_sibling.next_sibling.next_sibling.next_sibling.next), 4)
-        # can be line.next.next_sibling.next_sibling.next_sibling.next
+            line.next.next_sibling.next_sibling.next_sibling.next), 4)
+        # can be line.next.next_sibling.next_sibling.next_sibling.next_sibling.next
     return rate_from_BY
 
 
