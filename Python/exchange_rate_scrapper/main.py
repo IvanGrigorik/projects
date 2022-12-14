@@ -2,15 +2,15 @@
 # Simple scrapper, that uses currency rate and output it in text format
 # Created without commercial purpose
 
-from grubber import *
-
-from customtkinter import *
-
-from functools import partial
-import pandas
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import datetime
+from functools import partial
+
+import matplotlib.pyplot as plt
+import pandas
+from customtkinter import *
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
+from grubber import *
 
 set_appearance_mode("dark")
 set_default_color_theme("dark-blue")
