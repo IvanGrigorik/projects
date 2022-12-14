@@ -1,4 +1,5 @@
-from dataclasses import dataclass, fields
+import datetime
+from dataclasses import dataclass
 
 import requests
 from bs4 import BeautifulSoup
@@ -29,6 +30,8 @@ DUPLICATED_BANKS = ["«Заначка»", "Онлайн-обменник Nembo",
 def grub_exchange_rate() -> dict:
     source = requests.get('https://myfin.by/bank/kursy_valjut_nbrb').text
     soup = BeautifulSoup(source, 'lxml')
+    columns = soup.find('table', class_='default-table').find('thead').find('tr')
+    is_no_next_day_course = columns.next.next_sibling.next_sibling.text == "Код"
     exchange_rate_table = soup.find('table', class_='default-table').find('tbody').find_all('tr')
     rate_from_BY = dict()
     rate_from_BY['BYN'] = 1
@@ -36,11 +39,13 @@ def grub_exchange_rate() -> dict:
     for i in range(3):
         line = exchange_rate_table[i]
 
-        # Can be line.next.next_sibling.next_sibling.next_sibling.text
-        rate_from_BY[line.next.next_sibling.next_sibling.text] \
-            = round(float(line.next.next_sibling.text) / float(
-            line.next.next_sibling.next_sibling.next_sibling.next), 4)
-        # can be line.next.next_sibling.next_sibling.next_sibling.next_sibling.next
+        if is_no_next_day_course:
+            rate_from_BY[line.next.next_sibling.next_sibling.text] = round(
+                float(line.next.next_sibling.text) / float(line.next.next_sibling.next_sibling.next_sibling.next), 4)
+        else:
+            rate_from_BY[line.next.next_sibling.next_sibling.next_sibling.text] = round(
+                float(line.next.next_sibling.text) / float(
+                    line.next.next_sibling.next_sibling.next_sibling.next_sibling.next), 4)
     return rate_from_BY
 
 
@@ -66,7 +71,6 @@ def grub_currencies_rate() -> list:
 
             # Collect all information about bank
             for bank_info in bank:
-                # ! DO NOT Rewrite to regEx (Extremely slow!!)
                 # If bank doesn't sell currencies
                 if str(bank_info) == '<td class="currencies-courses__currency-cell ' \
                                      'currencies-courses__currency-cell--empty">-</td>':
@@ -100,8 +104,6 @@ def grub_currencies_rate() -> list:
     for x, currency in enumerate(number_dict.values()):
         for bank in banks_info:
             currencies[x].append((banks_info[bank][currency], banks_info[bank][currency + 1]))
-
-    # return bank_names, USD_list, EUR_list, RUB100_list, EUR_USD_list
 
     banks_info = list()
     for (name, USD, EUR, RUB100, EUR_USD) in zip(bank_names, USD_list, EUR_list, RUB100_list, EUR_USD_list):
