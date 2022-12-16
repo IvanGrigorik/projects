@@ -1,8 +1,4 @@
-# Created by SiFi
-# Simple scrapper, that uses currency rate and output it in text format
-# Created without commercial purpose
-
-import datetime
+from dataclasses import fields
 from functools import partial
 
 import matplotlib.pyplot as plt
@@ -142,7 +138,6 @@ class App(CTk):
         self.__tabview.add("Charts")
         self.__tabview.set("Currencies")
         self.__tabview.pack(padx=0, pady=0)
-        pass
 
     def draw_charts_tab(self):
         self.draw_charts_frame()
@@ -156,7 +151,6 @@ class App(CTk):
         self.grid_propagate(False)
         self.__charts_frame.place(relx=.5, rely=.5, anchor=CENTER)
         self.update()
-        pass
 
     def draw_combo_box_currency(self):
         self.__combo_box_charts = CTkComboBox(master=self.__charts_frame,
@@ -189,7 +183,7 @@ class App(CTk):
                                              color="#1F538D", marker='o',
                                              fontsize=10)
         self.__plot.set_facecolor("#D6D6D6")
-        self.__subplot.set_title("USD x BYN")
+        self.__subplot.set_title(f"{currency} x BYN")
 
     def draw_curr_rates_tab(self):
         # Top bar variables (USD/EUR/RUB100/EUR_RUB, buy/sell buttons)
@@ -234,7 +228,6 @@ class App(CTk):
             self.__converter_label.configure(text=converted_curr)
         else:
             self.__converter_label.configure(text="Enter valid value!")
-        pass
 
     @staticmethod
     def is_number(str_val: str):
@@ -260,15 +253,11 @@ class App(CTk):
         self.__combo_box_to_convert.set("BYN")
         self.__combo_box_to_convert.grid(row=0, column=3, padx=10)
 
-        pass
-
     def draw_reverse_button(self):
         self.__reverse_button = CTkButton(self.__converter_frame, width=50, height=50,
                                           text="↔", corner_radius=50,
                                           command=self.reverse_button_callback)
         self.__reverse_button.grid(row=0, column=2)
-
-        pass
 
     def reverse_button_callback(self):
         from_val = self.__combo_box_from_convert.get()
@@ -431,11 +420,8 @@ class App(CTk):
                     self.define_rates_position(row + 1, column + 1)
                     column += 2
         self.set_rate_text()
-        pass
 
 
 if __name__ == "__main__":
     app = App()
-
     app.mainloop()
-    pass
