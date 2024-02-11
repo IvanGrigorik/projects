@@ -103,7 +103,7 @@ def grub_currencies_rate() -> list:
     number_dict = {'USD': 0, 'EUR': 2, 'RUB_100': 4, 'EUR_USD': 6}
     for x, currency in enumerate(number_dict.values()):
         for bank in banks_info:
-            currencies[x].append((banks_info[bank][currency], banks_info[bank][currency + 1]))
+            currencies[x].append((banks_info[bank][currency], banks_info[bank][currency]))
 
     banks_info = list()
     for (name, USD, EUR, RUB100, EUR_USD) in zip(bank_names, USD_list, EUR_list, RUB100_list, EUR_USD_list):
